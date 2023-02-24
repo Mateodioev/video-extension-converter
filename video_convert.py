@@ -23,8 +23,22 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-i', '--input', help='Extension of the input files', required=False, default='ts')
 parser.add_argument('-o', '--output', help='Extension of the output files', required=False, default='mp4')
 
+skip_dirs = [
+	'.git',
+	'.vscode',
+	'.idea',
+	'node_modules',
+	'__pycache__',
+	'__MACOSX',
+	'vendor',
+	'bin',
+	'venv'
+]
+
 def get_videos(folder_path, extension_input = 'ts', extension_output = 'mp4'):
 	for root, dirs, files in os.walk(folder_path):
+		remove_invalid_dirs(dirs)
+
 		short_root = root.replace(folder_path, '')
 		print(f'{FG_WHITE}Root:{FG_RESET} {FG_BLUE}{short_root}{FG_RESET} | {FG_WHITE}Directorios:{FG_RESET} {FG_BLUE}{len(dirs)}{FG_RESET} | {FG_WHITE}Archivos:{FG_RESET} {FG_BLUE}{len(files)}{FG_RESET}')
 		success, failed = 0, 0
@@ -38,6 +52,14 @@ def get_videos(folder_path, extension_input = 'ts', extension_output = 'mp4'):
 		
 		print(f'{FG_GREEN}Procesados:{FG_RESET} {success} | {FG_RED}Fallidos:{FG_RESET} {failed}\n')
 
+
+def remove_invalid_dirs(dirs):
+	for skip_dir in skip_dirs:
+		if skip_dir in dirs:
+			print(f'{FG_RED}Skipping directory:{FG_RESET} {FG_BLUE}{skip_dir}{FG_RESET}')
+			dirs.remove(skip_dir)
+
+
 def proccess_file(root:str, file:str, extension_input = 'ts', extension_output = 'mp4'):
 	input_path = os.path.join(root, file)
 	output_path = os.path.join(root, file.replace(f'.{extension_input}', f'.{extension_output}'))
@@ -45,13 +67,14 @@ def proccess_file(root:str, file:str, extension_input = 'ts', extension_output =
 	try:
 		file_info = get_file_info(input_path)
 	except ValueError as e:
-		print(e)
+		print(f'{FG_RED}{e}')
 		return False
 
 	print(f' - {FG_YELLOW}File:{FG_RESET} {FG_CYAN}{file}{FG_RESET} | {FG_WHITE}Size:{FG_RESET} {file_info["human_size"]} | {FG_WHITE}Width:{FG_RESET} {file_info["width"]} | {FG_WHITE}Height:{FG_RESET} {file_info["height"]}')
 	crf = calc_crf(file_info)
 
-	convert_to_mp4(input_path, output_path, crf)
+	return convert_to_mp4(input_path, output_path, crf)
+
 
 def get_file_info(file_path):
 	probe = ffmpeg.probe(file_path)
@@ -76,11 +99,13 @@ def get_file_info(file_path):
 		'bitrate': probe['format']['bit_rate']
 	}
 
+
 def readable_size(byte:int):
 	for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
 		if byte < 1024:
 			return f'{byte:.2f} {unit}'
 		byte /= 1024
+
 
 def calc_crf(fileinfo):
 	size = ceil(float(fileinfo['size']))
@@ -96,6 +121,7 @@ def calc_crf(fileinfo):
 	crf = int(crf[:2]) - 10
 
 	return 30 if crf > 31 else crf
+
 
 def convert_to_mp4(video_path, output_path, crf):
 	try:
@@ -115,6 +141,7 @@ def convert_to_mp4(video_path, output_path, crf):
 		print(e.stderr)
 		return False
 
+
 def read_bool_input(message, options = ['y', 'n'], default = None):
 	while True:
 
@@ -128,11 +155,12 @@ def read_bool_input(message, options = ['y', 'n'], default = None):
 		else:
 			print(f'"{user_input}" no es una opción válida')
 
+
 def ask_path():
 	path = os.getcwd()
 	print(f'{FG_WHITE}Directorio actual:{FG_RESET} {FG_BLUE}{path}{FG_RESET}')
 
-	if (read_bool_input(f'{FG_WHITE}¿Desea cambiar el directorio?{FG_RESET}', default='n')):
+	if read_bool_input(f'{FG_WHITE}¿Desea cambiar el directorio?{FG_RESET}', default='n'):
 		path = input(f'{FG_WHITE}Ingrese el directorio:{FG_RESET} ')
 
 		if not os.path.exists(path):
@@ -142,6 +170,7 @@ def ask_path():
 	print()
 	return path
 
+
 def main():
 	args = parser.parse_args()
 
@@ -150,6 +179,7 @@ def main():
 		return
 
 	get_videos(os.getcwd(), args.input, args.output)
+
 
 if __name__ == '__main__':
 	main()
