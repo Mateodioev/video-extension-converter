@@ -195,8 +195,11 @@ def main():
 	if path is None:
 		return
 
-	get_videos(os.getcwd(), args.input, args.output)
+	get_videos(path, args.input, args.output)
 
 
 if __name__ == '__main__':
-	main()
+	try:
+		main()
+	except KeyboardInterrupt:
+		print('Good bye!!!')
