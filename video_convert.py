@@ -4,7 +4,7 @@
 from math import ceil
 import ffmpeg
 import os
-from colorama import Fore
+from colorama import Fore, Style
 import argparse
 
 FG_GREEN = Fore.GREEN
@@ -14,6 +14,8 @@ FG_BLUE = Fore.BLUE
 FG_CYAN = Fore.CYAN
 FG_WHITE = Fore.WHITE
 FG_RESET = Fore.RESET
+ST_BRIGHT = Style.BRIGHT
+ST_RESET = Style.RESET_ALL
 
 parser = argparse.ArgumentParser(
 	prog='Video extension Converter',
@@ -22,6 +24,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('-i', '--input', help='Extension of the input files', required=False, default='ts')
 parser.add_argument('-o', '--output', help='Extension of the output files', required=False, default='mp4')
+parser.add_argument('-d', '--delete', help='Delete input files after conversion', default=True, action='store_true')
 
 skip_dirs = [
 	'.git',
@@ -36,7 +39,7 @@ skip_dirs = [
 ]
 
 
-def get_videos(folder_path, extension_input = 'ts', extension_output = 'mp4'):
+def get_videos(folder_path, extension_input = 'ts', extension_output = 'mp4', delete = False):
 	for root, dirs, files in os.walk(folder_path):
 		remove_invalid_dirs(dirs)
 
@@ -48,6 +51,8 @@ def get_videos(folder_path, extension_input = 'ts', extension_output = 'mp4'):
 			if file.endswith(f'.{extension_input}'):
 				if (proccess_file(root, file, extension_input, extension_output)):
 					success += 1
+					if delete:
+						delete_file(root, file)
 				else:
 					failed += 1
 		
@@ -75,6 +80,15 @@ def proccess_file(root:str, file:str, extension_input = 'ts', extension_output =
 	crf = calc_crf(file_info)
 
 	return convert_to_mp4(input_path, output_path, crf)
+
+
+def delete_file(root, file):
+	file_path = os.path.join(root, file)
+	try:
+		os.remove(file_path)
+		print(f' - {FG_YELLOW}File:{FG_RESET} {FG_CYAN}{file}{FG_RESET} | {FG_RED}Deleted{FG_RESET}')
+	except OSError as e:
+		print(f'{FG_RED}{e}{FG_RESET}')
 
 
 def get_file_info(file_path):
@@ -189,13 +203,15 @@ def ask_path():
 
 
 def main():
+	print(f'{ST_BRIGHT}{FG_CYAN}Video codec: {FG_WHITE}{VIDEO_CODEC}{ST_RESET}')
+
 	args = parser.parse_args()
 
 	path = ask_path()
 	if path is None:
 		return
 
-	get_videos(path, args.input, args.output)
+	get_videos(path, args.input, args.output, args.delete)
 
 
 if __name__ == '__main__':

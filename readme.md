@@ -24,6 +24,7 @@ python video_convert.py --help
 
 - `-i ` Video extension source. Default ts
 - `-o` Video extension target. Default mp4
+- `-d` Delete video source. Default True
 
 ### Execute as command
 
