@@ -35,6 +35,7 @@ skip_dirs = [
 	'venv'
 ]
 
+
 def get_videos(folder_path, extension_input = 'ts', extension_output = 'mp4'):
 	for root, dirs, files in os.walk(folder_path):
 		remove_invalid_dirs(dirs)
@@ -123,16 +124,32 @@ def calc_crf(fileinfo):
 	return 30 if crf > 31 else crf
 
 
+def can_use_nvidia():
+	import subprocess
+
+	try:
+		lspci_output = subprocess.check_output(['lspci'], stderr=subprocess.STDOUT).decode('utf-8')
+		
+		return "NVIDIA" in lspci_output
+
+	except subprocess.CalledProcessError:
+		return False
+
+
+VIDEO_CODEC = 'h264_nvenc' if can_use_nvidia() else 'libx264'
+
+
 def convert_to_mp4(video_path, output_path, crf):
 	try:
 		(
 			ffmpeg
 			.input(video_path)
 			.output(output_path, **{
-				'c:v': 'h264_nvenc',
+				'c:v': VIDEO_CODEC,
 				'rc': 'constqp',
 				'crf': crf,
 				'c:a': 'aac',
+				'loglevel': 'error'
 			})
 			.run()
 		)

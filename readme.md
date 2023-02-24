@@ -2,6 +2,8 @@
 
 Convert any video extension in directory 
 
+> :warning: **Only works on linux**
+
 ## Installation
 ```bash
 git clone https://github.com/Mateodioev/video-extension-converter.git
