@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('-i', '--input', help='Extension of the input files', required=False, default='ts')
 parser.add_argument('-o', '--output', help='Extension of the output files', required=False, default='mp4')
-parser.add_argument('-d', '--delete', help='Delete input files after conversion', default=True, action='store_true')
+parser.add_argument('-d', '--delete', help='Delete input files after conversion', action='store_true')
 
 skip_dirs = [
 	'.git',
